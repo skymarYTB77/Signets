@@ -14,6 +14,8 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 
+const DEFAULT_CATEGORY_ID = 'default';
+
 function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
     const saved = localStorage.getItem('bookmarks');
@@ -22,11 +24,18 @@ function App() {
 
   const [categories, setCategories] = useState<Category[]>(() => {
     const saved = localStorage.getItem('categories');
-    return saved ? JSON.parse(saved) : [];
+    const savedCategories = saved ? JSON.parse(saved) : [];
+    if (!savedCategories.some(c => c.id === DEFAULT_CATEGORY_ID)) {
+      return [
+        { id: DEFAULT_CATEGORY_ID, name: 'Nouveaux signets' },
+        ...savedCategories
+      ];
+    }
+    return savedCategories;
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY_ID);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -41,7 +50,8 @@ function App() {
   }, [bookmarks]);
 
   useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
+    const categoriesToSave = categories.filter(c => c.id !== DEFAULT_CATEGORY_ID);
+    localStorage.setItem('categories', JSON.stringify(categoriesToSave));
   }, [categories]);
 
   const addBookmark = (title: string, url: string) => {
@@ -52,7 +62,7 @@ function App() {
       id: Date.now().toString(),
       title: title.trim(),
       url: boltUrl,
-      categoryId: selectedCategory || (categories.length > 0 ? categories[0].id : '')
+      categoryId: DEFAULT_CATEGORY_ID
     };
 
     setBookmarks([...bookmarks, newBookmark]);
@@ -68,12 +78,27 @@ function App() {
       name: 'Nouvelle catégorie'
     };
     setCategories([...categories, newCategory]);
-    if (!selectedCategory) {
-      setSelectedCategory(newCategory.id);
+  };
+
+  const deleteCategory = (id: string) => {
+    if (id === DEFAULT_CATEGORY_ID) return;
+    
+    const categoryToDelete = categories.find(c => c.id === id);
+    if (!categoryToDelete) return;
+
+    if (window.confirm(`Voulez-vous vraiment supprimer la catégorie "${categoryToDelete.name}" ? Les signets seront déplacés vers "Nouveaux signets".`)) {
+      setBookmarks(bookmarks.map(bookmark => 
+        bookmark.categoryId === id ? { ...bookmark, categoryId: DEFAULT_CATEGORY_ID } : bookmark
+      ));
+      setCategories(categories.filter(category => category.id !== id));
+      if (selectedCategory === id) {
+        setSelectedCategory(DEFAULT_CATEGORY_ID);
+      }
     }
   };
 
   const renameCategory = (id: string, newName: string) => {
+    if (id === DEFAULT_CATEGORY_ID) return;
     setCategories(categories.map(category =>
       category.id === id ? { ...category, name: newName } : category
     ));
@@ -122,6 +147,7 @@ function App() {
             selectedCategory={selectedCategory}
             onCategorySelect={setSelectedCategory}
             onAddCategory={addCategory}
+            onDeleteCategory={deleteCategory}
             onRenameCategory={renameCategory}
             onDeleteBookmark={deleteBookmark}
             onCopyBookmark={handleCopy}

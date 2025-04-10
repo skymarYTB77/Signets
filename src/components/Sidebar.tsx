@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink, GripVertical } from 'lucide-react';
 import { Category, Bookmark } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useDroppable } from '@dnd-kit/core';
 
 interface SidebarProps {
   categories: Category[];
@@ -10,6 +11,7 @@ interface SidebarProps {
   selectedCategory: string;
   onCategorySelect: (id: string) => void;
   onAddCategory: () => void;
+  onDeleteCategory: (id: string) => void;
   onRenameCategory: (id: string, newName: string) => void;
   onDeleteBookmark: (id: string) => void;
   onCopyBookmark: (url: string) => void;
@@ -23,6 +25,7 @@ function CategoryItem({
   isSelected,
   onSelect,
   onRename,
+  onDelete,
   onDeleteBookmark,
   onCopyBookmark 
 }: {
@@ -31,6 +34,7 @@ function CategoryItem({
   isSelected: boolean;
   onSelect: () => void;
   onRename: (newName: string) => void;
+  onDelete: (id: string) => void;
   onDeleteBookmark: (id: string) => void;
   onCopyBookmark: (url: string) => void;
 }) {
@@ -38,10 +42,15 @@ function CategoryItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: `category-${category.id}`,
+  });
+
   const categoryBookmarks = bookmarks.filter(b => b.categoryId === category.id);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (category.id === 'default') return;
     setIsEditing(true);
     setEditName(category.name);
   };
@@ -60,11 +69,11 @@ function CategoryItem({
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" ref={setNodeRef}>
       <div 
         className={`flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer ${
           isSelected ? 'bg-blue-50' : ''
-        }`}
+        } ${isOver ? 'bg-blue-100' : ''}`}
         onClick={() => {
           setIsExpanded(!isExpanded);
           onSelect();
@@ -94,7 +103,21 @@ function CategoryItem({
             {category.name}
           </span>
         )}
-        <span className="text-sm text-gray-500">{categoryBookmarks.length}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">{categoryBookmarks.length}</span>
+          {category.id !== 'default' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(category.id);
+              }}
+              className="p-1 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100"
+              title="Supprimer la catégorie"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
       
       {isExpanded && (
@@ -157,6 +180,9 @@ function BookmarkItem({
       {...listeners}
       className="flex items-center p-2 hover:bg-gray-100 rounded-md group"
     >
+      <div className="cursor-grab mr-2">
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
       <a
         href={bookmark.url}
         target="_blank"
@@ -193,6 +219,7 @@ export function Sidebar({
   selectedCategory,
   onCategorySelect,
   onAddCategory,
+  onDeleteCategory,
   onRenameCategory,
   onDeleteBookmark,
   onCopyBookmark,
@@ -235,6 +262,7 @@ export function Sidebar({
             isSelected={category.id === selectedCategory}
             onSelect={() => onCategorySelect(category.id)}
             onRename={(newName) => onRenameCategory(category.id, newName)}
+            onDelete={onDeleteCategory}
             onDeleteBookmark={onDeleteBookmark}
             onCopyBookmark={onCopyBookmark}
           />
