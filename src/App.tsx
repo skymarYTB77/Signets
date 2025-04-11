@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link as LinkIcon } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { BookmarkForm } from './components/BookmarkForm';
+import { Auth } from './components/Auth';
 import { Bookmark, Category } from './types';
 import { convertToBoltUrl } from './utils/boltUrl';
 import { useKeyboardShortcut } from './hooks/useKeyboardShortcut';
+import { User } from 'firebase/auth';
+import { firestoreService } from './services/firestore';
 import {
   DndContext,
   DragEndEvent,
@@ -17,25 +20,14 @@ import {
 const DEFAULT_CATEGORY_ID = 'default';
 
 function App() {
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
-    const saved = localStorage.getItem('bookmarks');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('categories');
-    const savedCategories = saved ? JSON.parse(saved) : [];
-    if (!savedCategories.some(c => c.id === DEFAULT_CATEGORY_ID)) {
-      return [
-        { id: DEFAULT_CATEGORY_ID, name: 'Nouveaux signets' },
-        ...savedCategories
-      ];
-    }
-    return savedCategories;
-  });
-
+  const [user, setUser] = useState<User | null>(null);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: DEFAULT_CATEGORY_ID, name: 'Nouveaux signets' }
+  ]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY_ID);
+  const [isLoading, setIsLoading] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -45,14 +37,66 @@ function App() {
     })
   );
 
+  // Load data from Firestore when user changes
   useEffect(() => {
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-  }, [bookmarks]);
+    const loadData = async () => {
+      if (user) {
+        try {
+          setIsLoading(true);
+          const [loadedBookmarks, loadedCategories] = await Promise.all([
+            firestoreService.getBookmarks(user.uid),
+            firestoreService.getCategories(user.uid)
+          ]);
+          
+          setBookmarks(loadedBookmarks);
+          setCategories(prev => {
+            const defaultCategory = prev.find(c => c.id === DEFAULT_CATEGORY_ID);
+            return [
+              defaultCategory!,
+              ...loadedCategories.filter(c => c.id !== DEFAULT_CATEGORY_ID)
+            ];
+          });
+        } catch (error) {
+          console.error('Error loading data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
 
+    loadData();
+  }, [user]);
+
+  // Save bookmarks to Firestore
   useEffect(() => {
-    const categoriesToSave = categories.filter(c => c.id !== DEFAULT_CATEGORY_ID);
-    localStorage.setItem('categories', JSON.stringify(categoriesToSave));
-  }, [categories]);
+    const saveBookmarks = async () => {
+      if (user && !isLoading) {
+        try {
+          await firestoreService.saveBookmarks(user.uid, bookmarks);
+        } catch (error) {
+          console.error('Error saving bookmarks:', error);
+        }
+      }
+    };
+
+    saveBookmarks();
+  }, [bookmarks, user, isLoading]);
+
+  // Save categories to Firestore
+  useEffect(() => {
+    const saveCategories = async () => {
+      if (user && !isLoading) {
+        try {
+          const categoriesToSave = categories.filter(c => c.id !== DEFAULT_CATEGORY_ID);
+          await firestoreService.saveCategories(user.uid, categoriesToSave);
+        } catch (error) {
+          console.error('Error saving categories:', error);
+        }
+      }
+    };
+
+    saveCategories();
+  }, [categories, user, isLoading]);
 
   const findMatchingCategory = (url: string): string => {
     const matchingCategory = categories.find(category => 
@@ -164,6 +208,18 @@ function App() {
       alert('URL Bolt copiée dans le presse-papiers !');
     }
   });
+
+  if (!user) {
+    return <Auth onAuthStateChange={setUser} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">

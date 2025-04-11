@@ -5,6 +5,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import { detectUrlType } from '../utils/boltUrl';
+import { SearchBar } from './SearchBar';
+import { BookmarkList } from './BookmarkList';
 
 interface SidebarProps {
   categories: Category[];
@@ -30,7 +32,8 @@ function CategoryItem({
   onDelete,
   onUpdateUrlPattern,
   onDeleteBookmark,
-  onCopyBookmark 
+  onCopyBookmark,
+  searchTerm
 }: {
   category: Category;
   bookmarks: Bookmark[];
@@ -41,6 +44,7 @@ function CategoryItem({
   onUpdateUrlPattern: (urlPattern: string) => void;
   onDeleteBookmark: (id: string) => void;
   onCopyBookmark: (url: string) => void;
+  searchTerm: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -78,24 +82,6 @@ function CategoryItem({
     e.preventDefault();
     onUpdateUrlPattern(urlPattern.trim());
   };
-
-  const getBookmarksByType = () => {
-    const types = {
-      github: 0,
-      figma: 0,
-      bolt: 0,
-      other: 0
-    };
-
-    categoryBookmarks.forEach(bookmark => {
-      const type = detectUrlType(bookmark.url);
-      types[type]++;
-    });
-
-    return types;
-  };
-
-  const bookmarkTypes = getBookmarksByType();
 
   return (
     <div className="space-y-1" ref={setNodeRef}>
@@ -191,94 +177,15 @@ function CategoryItem({
       )}
       
       {isExpanded && (
-        <div className="ml-6 space-y-1">
-          {categoryBookmarks.map(bookmark => (
-            <BookmarkItem
-              key={bookmark.id}
-              bookmark={bookmark}
-              onDelete={onDeleteBookmark}
-              onCopy={onCopyBookmark}
-            />
-          ))}
+        <div className="ml-6">
+          <BookmarkList
+            bookmarks={categoryBookmarks}
+            onDelete={onDeleteBookmark}
+            onCopy={onCopyBookmark}
+            searchTerm={searchTerm}
+          />
         </div>
       )}
-    </div>
-  );
-}
-
-function BookmarkItem({ 
-  bookmark,
-  onDelete,
-  onCopy 
-}: {
-  bookmark: Bookmark;
-  onDelete: (id: string) => void;
-  onCopy: (url: string) => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: bookmark.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onCopy(bookmark.url);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (window.confirm('Voulez-vous vraiment supprimer ce signet ?')) {
-      onDelete(bookmark.id);
-    }
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center p-2 hover:bg-white/5 rounded-md group"
-    >
-      <div className="cursor-grab mr-2">
-        <GripVertical className="w-4 h-4 text-neutral-text" />
-      </div>
-      <a
-        href={bookmark.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex-1 text-sm text-primary hover:text-primary-light truncate flex items-center gap-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {bookmark.title}
-        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100" />
-      </a>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-        <button
-          onClick={handleCopy}
-          className="p-1 text-neutral-text hover:text-white"
-          title="Copier le lien"
-        >
-          <Copy className="w-3 h-3" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="p-1 text-error-light hover:text-error"
-          title="Supprimer"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -297,31 +204,48 @@ export function Sidebar({
   searchTerm,
   onSearch,
 }: SidebarProps) {
-  const filteredBookmarks = bookmarks.filter(bookmark =>
-    bookmark.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bookmark.url.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [searchFilter, setSearchFilter] = useState<string>('all');
+
+  const filterBookmarks = (bookmarks: Bookmark[]) => {
+    if (!searchTerm) return bookmarks;
+
+    return bookmarks.filter(bookmark => {
+      const term = searchTerm.toLowerCase();
+      const titleMatch = bookmark.title.toLowerCase().includes(term);
+      const urlMatch = bookmark.url.toLowerCase().includes(term);
+
+      switch (searchFilter) {
+        case 'title':
+          return titleMatch;
+        case 'url':
+          return urlMatch;
+        default:
+          return titleMatch || urlMatch;
+      }
+    });
+  };
+
+  const filteredBookmarks = filterBookmarks(bookmarks);
 
   return (
     <div className="w-1/2 bg-dark-card p-4 flex flex-col h-full">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-text w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-dark-bg border border-white/10 rounded-md text-white placeholder-neutral-text focus:outline-none focus:ring-2 focus:ring-primary"
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <SearchBar
+            searchTerm={searchTerm}
+            onSearch={onSearch}
+            onFilterChange={setSearchFilter}
+            activeFilter={searchFilter}
+            resultCount={filteredBookmarks.length}
           />
+          <button
+            onClick={onAddCategory}
+            className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
+            title="Nouvelle catégorie"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
-        <button
-          onClick={onAddCategory}
-          className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
-          title="Nouvelle catégorie"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2">
@@ -337,6 +261,7 @@ export function Sidebar({
             onUpdateUrlPattern={(urlPattern) => onUpdateCategoryUrlPattern(category.id, urlPattern)}
             onDeleteBookmark={onDeleteBookmark}
             onCopyBookmark={onCopyBookmark}
+            searchTerm={searchTerm}
           />
         ))}
       </div>

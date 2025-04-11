@@ -8,12 +8,41 @@ interface BookmarkListProps {
   bookmarks: Bookmark[];
   onDelete: (id: string) => void;
   onCopy: (url: string) => void;
+  searchTerm: string;
 }
 
-function SortableBookmark({ bookmark, onDelete, onCopy }: {
+function HighlightText({ text, highlight }: { text: string; highlight: string }) {
+  if (!highlight.trim()) {
+    return <span>{text}</span>;
+  }
+
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <span key={i} className="bg-primary/20 text-primary font-medium">
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
+
+function SortableBookmark({ 
+  bookmark,
+  onDelete,
+  onCopy,
+  searchTerm
+}: {
   bookmark: Bookmark;
   onDelete: (id: string) => void;
   onCopy: (url: string) => void;
+  searchTerm: string;
 }) {
   const {
     attributes,
@@ -45,50 +74,51 @@ function SortableBookmark({ bookmark, onDelete, onCopy }: {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center bg-white p-3 rounded-md shadow-sm hover:shadow-md transition-shadow group"
+      className="flex items-center p-2 hover:bg-white/5 rounded-md group"
     >
-      <div {...attributes} {...listeners} className="mr-2 cursor-grab">
-        <GripVertical className="w-4 h-4 text-gray-400" />
+      <div {...attributes} {...listeners} className="cursor-grab mr-2">
+        <GripVertical className="w-4 h-4 text-neutral-text" />
       </div>
       <a
         href={bookmark.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 truncate flex-1 flex items-center gap-2"
+        className="flex-1 text-sm text-primary hover:text-primary-light truncate flex items-center gap-1"
         title={bookmark.title}
       >
-        {bookmark.title}
-        <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <HighlightText text={bookmark.title} highlight={searchTerm} />
+        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100" />
       </a>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
         <button
           onClick={handleCopy}
-          className="text-gray-500 hover:text-gray-700 p-1"
+          className="p-1 text-neutral-text hover:text-white"
           title="Copier le lien"
         >
-          <Copy className="w-4 h-4" />
+          <Copy className="w-3 h-3" />
         </button>
         <button
           onClick={confirmDelete}
-          className="text-red-500 hover:text-red-700 p-1"
+          className="p-1 text-error-light hover:text-error"
           title="Supprimer"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3 h-3" />
         </button>
       </div>
     </div>
   );
 }
 
-export function BookmarkList({ bookmarks, onDelete, onCopy }: BookmarkListProps) {
+export function BookmarkList({ bookmarks, onDelete, onCopy, searchTerm }: BookmarkListProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {bookmarks.map((bookmark) => (
         <SortableBookmark
           key={bookmark.id}
           bookmark={bookmark}
           onDelete={onDelete}
           onCopy={onCopy}
+          searchTerm={searchTerm}
         />
       ))}
     </div>
