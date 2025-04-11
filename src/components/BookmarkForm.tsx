@@ -10,6 +10,7 @@ export function BookmarkForm({ onAdd }: BookmarkFormProps) {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
+  const [figmaUrl, setFigmaUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,12 +20,13 @@ export function BookmarkForm({ onAdd }: BookmarkFormProps) {
     setUrl('');
   };
 
-  const handleBoltConvert = (e: React.FormEvent) => {
+  const handleBoltConvert = (e: React.FormEvent, sourceUrl: string) => {
     e.preventDefault();
-    if (!githubUrl.trim()) return;
-    const boltUrl = convertToBoltUrl(githubUrl);
+    if (!sourceUrl.trim()) return;
+    const boltUrl = convertToBoltUrl(sourceUrl);
     navigator.clipboard.writeText(boltUrl);
-    setGithubUrl('');
+    if (sourceUrl === githubUrl) setGithubUrl('');
+    if (sourceUrl === figmaUrl) setFigmaUrl('');
     setUrl(boltUrl);
   };
 
@@ -65,13 +67,31 @@ export function BookmarkForm({ onAdd }: BookmarkFormProps) {
         </button>
       </form>
 
-      <div className="pt-2 border-t border-gray-200">
-        <form onSubmit={handleBoltConvert} className="flex gap-2">
+      <div className="pt-2 border-t border-gray-200 space-y-2">
+        <form onSubmit={(e) => handleBoltConvert(e, githubUrl)} className="flex gap-2">
           <input
             type="text"
             placeholder="URL GitHub à convertir"
             value={githubUrl}
             onChange={(e) => setGithubUrl(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-1"
+            title="Convertir en URL Bolt"
+          >
+            <Wand2 className="w-4 h-4" />
+            Bolt
+          </button>
+        </form>
+
+        <form onSubmit={(e) => handleBoltConvert(e, figmaUrl)} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="URL Figma à convertir"
+            value={figmaUrl}
+            onChange={(e) => setFigmaUrl(e.target.value)}
             className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button

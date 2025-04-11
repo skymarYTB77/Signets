@@ -54,15 +54,23 @@ function App() {
     localStorage.setItem('categories', JSON.stringify(categoriesToSave));
   }, [categories]);
 
+  const findMatchingCategory = (url: string): string => {
+    const matchingCategory = categories.find(category => 
+      category.urlPattern && url.includes(category.urlPattern)
+    );
+    return matchingCategory?.id || DEFAULT_CATEGORY_ID;
+  };
+
   const addBookmark = (title: string, url: string) => {
     const processedUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
     const boltUrl = convertToBoltUrl(processedUrl);
+    const categoryId = findMatchingCategory(boltUrl);
 
     const newBookmark: Bookmark = {
       id: Date.now().toString(),
       title: title.trim(),
       url: boltUrl,
-      categoryId: DEFAULT_CATEGORY_ID
+      categoryId
     };
 
     setBookmarks([...bookmarks, newBookmark]);
@@ -102,6 +110,32 @@ function App() {
     setCategories(categories.map(category =>
       category.id === id ? { ...category, name: newName } : category
     ));
+  };
+
+  const updateCategoryUrlPattern = (id: string, urlPattern: string) => {
+    if (id === DEFAULT_CATEGORY_ID) return;
+    
+    // Vérifier si le modèle d'URL existe déjà dans une autre catégorie
+    const patternExists = categories.some(c => 
+      c.id !== id && c.urlPattern === urlPattern
+    );
+    
+    if (patternExists) {
+      alert('Ce modèle d\'URL est déjà utilisé par une autre catégorie.');
+      return;
+    }
+
+    setCategories(categories.map(category =>
+      category.id === id ? { ...category, urlPattern } : category
+    ));
+
+    // Réorganiser les signets existants si nécessaire
+    setBookmarks(bookmarks.map(bookmark => {
+      if (bookmark.url.includes(urlPattern)) {
+        return { ...bookmark, categoryId: id };
+      }
+      return bookmark;
+    }));
   };
 
   const handleCopy = (url: string) => {
@@ -149,6 +183,7 @@ function App() {
             onAddCategory={addCategory}
             onDeleteCategory={deleteCategory}
             onRenameCategory={renameCategory}
+            onUpdateCategoryUrlPattern={updateCategoryUrlPattern}
             onDeleteBookmark={deleteBookmark}
             onCopyBookmark={handleCopy}
             searchTerm={searchTerm}

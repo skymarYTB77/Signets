@@ -8,4 +8,5 @@ export interface Bookmark {
 export interface Category {
   id: string;
   name: string;
+  urlPattern?: string;
 }

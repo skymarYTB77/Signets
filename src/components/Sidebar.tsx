@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink, GripVertical } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink, GripVertical, Settings } from 'lucide-react';
 import { Category, Bookmark } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
+import { detectUrlType } from '../utils/boltUrl';
 
 interface SidebarProps {
   categories: Category[];
@@ -13,6 +14,7 @@ interface SidebarProps {
   onAddCategory: () => void;
   onDeleteCategory: (id: string) => void;
   onRenameCategory: (id: string, newName: string) => void;
+  onUpdateCategoryUrlPattern: (id: string, urlPattern: string) => void;
   onDeleteBookmark: (id: string) => void;
   onCopyBookmark: (url: string) => void;
   searchTerm: string;
@@ -26,6 +28,7 @@ function CategoryItem({
   onSelect,
   onRename,
   onDelete,
+  onUpdateUrlPattern,
   onDeleteBookmark,
   onCopyBookmark 
 }: {
@@ -35,12 +38,15 @@ function CategoryItem({
   onSelect: () => void;
   onRename: (newName: string) => void;
   onDelete: (id: string) => void;
+  onUpdateUrlPattern: (urlPattern: string) => void;
   onDeleteBookmark: (id: string) => void;
   onCopyBookmark: (url: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
+  const [showSettings, setShowSettings] = useState(false);
+  const [urlPattern, setUrlPattern] = useState(category.urlPattern || '');
 
   const { setNodeRef, isOver } = useDroppable({
     id: `category-${category.id}`,
@@ -68,10 +74,33 @@ function CategoryItem({
     }
   };
 
+  const handleUrlPatternSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateUrlPattern(urlPattern.trim());
+  };
+
+  const getBookmarksByType = () => {
+    const types = {
+      github: 0,
+      figma: 0,
+      bolt: 0,
+      other: 0
+    };
+
+    categoryBookmarks.forEach(bookmark => {
+      const type = detectUrlType(bookmark.url);
+      types[type]++;
+    });
+
+    return types;
+  };
+
+  const bookmarkTypes = getBookmarksByType();
+
   return (
     <div className="space-y-1" ref={setNodeRef}>
       <div 
-        className={`flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer ${
+        className={`flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer group ${
           isSelected ? 'bg-blue-50' : ''
         } ${isOver ? 'bg-blue-100' : ''}`}
         onClick={() => {
@@ -105,20 +134,61 @@ function CategoryItem({
         )}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">{categoryBookmarks.length}</span>
-          {category.id !== 'default' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(category.id);
-              }}
-              className="p-1 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100"
-              title="Supprimer la catégorie"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {category.id !== 'default' && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSettings(!showSettings);
+                  }}
+                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
+                  title="Paramètres de la catégorie"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(category.id);
+                  }}
+                  className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                  title="Supprimer la catégorie"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
+      
+      {showSettings && category.id !== 'default' && (
+        <div className="ml-6 p-2 bg-gray-50 rounded-md" onClick={e => e.stopPropagation()}>
+          <form onSubmit={handleUrlPatternSubmit} className="space-y-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type d'URL
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={urlPattern}
+                  onChange={(e) => setUrlPattern(e.target.value)}
+                  placeholder="ex: bolt.new"
+                  className="flex-1 px-2 py-1 text-sm border rounded"
+                />
+                <button
+                  type="submit"
+                  className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
       
       {isExpanded && (
         <div className="ml-6 space-y-1">
@@ -221,6 +291,7 @@ export function Sidebar({
   onAddCategory,
   onDeleteCategory,
   onRenameCategory,
+  onUpdateCategoryUrlPattern,
   onDeleteBookmark,
   onCopyBookmark,
   searchTerm,
@@ -263,6 +334,7 @@ export function Sidebar({
             onSelect={() => onCategorySelect(category.id)}
             onRename={(newName) => onRenameCategory(category.id, newName)}
             onDelete={onDeleteCategory}
+            onUpdateUrlPattern={(urlPattern) => onUpdateCategoryUrlPattern(category.id, urlPattern)}
             onDeleteBookmark={onDeleteBookmark}
             onCopyBookmark={onCopyBookmark}
           />
