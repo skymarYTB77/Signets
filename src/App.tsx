@@ -115,7 +115,6 @@ function App() {
   const updateCategoryUrlPattern = (id: string, urlPattern: string) => {
     if (id === DEFAULT_CATEGORY_ID) return;
     
-    // Vérifier si le modèle d'URL existe déjà dans une autre catégorie
     const patternExists = categories.some(c => 
       c.id !== id && c.urlPattern === urlPattern
     );
@@ -129,7 +128,6 @@ function App() {
       category.id === id ? { ...category, urlPattern } : category
     ));
 
-    // Réorganiser les signets existants si nécessaire
     setBookmarks(bookmarks.map(bookmark => {
       if (bookmark.url.includes(urlPattern)) {
         return { ...bookmark, categoryId: id };
@@ -168,13 +166,13 @@ function App() {
   });
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex w-[800px] h-[500px] bg-gray-100 rounded-lg overflow-hidden shadow-xl">
+        <div className="flex w-[800px] h-[500px] bg-dark-card rounded-lg overflow-hidden shadow-xl neon-shadow">
           <Sidebar
             categories={categories}
             bookmarks={bookmarks}
@@ -189,10 +187,10 @@ function App() {
             searchTerm={searchTerm}
             onSearch={setSearchTerm}
           />
-          <div className="w-1/2 bg-white p-4 border-l border-gray-200">
+          <div className="w-1/2 bg-dark-card p-4 border-l border-white/10">
             <div className="flex items-center gap-2 mb-4">
-              <LinkIcon className="w-5 h-5 text-blue-500" />
-              <h1 className="text-lg font-semibold text-gray-800">Nouveau signet</h1>
+              <LinkIcon className="w-5 h-5 text-primary" />
+              <h1 className="text-lg font-semibold text-white">Nouveau signet</h1>
             </div>
             <BookmarkForm onAdd={addBookmark} />
           </div>

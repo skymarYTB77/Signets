@@ -1,3 +1,90 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-gradient: linear-gradient(135deg, #2193b0, #6dd5ed);
+    --save-gradient: linear-gradient(135deg, #667eea, #764ba2);
+    --accept-gradient: linear-gradient(135deg, #00b09b, #96c93d);
+    --delete-gradient: linear-gradient(135deg, #ff0844, #ffb199);
+    --export-gradient: linear-gradient(135deg, #00f260, #0575e6);
+    --reject-gradient: linear-gradient(135deg, #ff416c, #ff4b2b);
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --neon-shadow: rgba(107, 213, 237, 0.3);
+  }
+
+  body {
+    @apply font-sans text-neutral-text bg-dark-bg;
+  }
+
+  code {
+    @apply font-code;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply backdrop-blur-md bg-[var(--glass-bg)] border border-white/10;
+  }
+
+  .neon-shadow {
+    box-shadow: 0 0 15px var(--neon-shadow);
+  }
+
+  .neon-border {
+    @apply relative overflow-hidden;
+    &::before {
+      content: '';
+      @apply absolute inset-0 rounded-md;
+      background: var(--primary-gradient);
+      animation: border-animation 4s linear infinite;
+    }
+    &::after {
+      content: '';
+      @apply absolute inset-[1px] rounded-[3px] bg-dark-bg;
+    }
+  }
+
+  .gradient-animate {
+    animation: gradientBG 8s ease infinite;
+    background-size: 300% 300%;
+  }
+}
+
+@layer utilities {
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-full;
+    background-image: var(--primary-gradient);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-light;
+  }
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes border-animation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

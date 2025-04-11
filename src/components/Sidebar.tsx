@@ -100,18 +100,18 @@ function CategoryItem({
   return (
     <div className="space-y-1" ref={setNodeRef}>
       <div 
-        className={`flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer group ${
-          isSelected ? 'bg-blue-50' : ''
-        } ${isOver ? 'bg-blue-100' : ''}`}
+        className={`flex items-center p-2 hover:bg-white/5 rounded cursor-pointer group ${
+          isSelected ? 'bg-primary/10' : ''
+        } ${isOver ? 'bg-primary/20' : ''}`}
         onClick={() => {
           setIsExpanded(!isExpanded);
           onSelect();
         }}
       >
         {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-500 mr-1" />
+          <ChevronDown className="w-4 h-4 text-neutral-text mr-1" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-500 mr-1" />
+          <ChevronRight className="w-4 h-4 text-neutral-text mr-1" />
         )}
         {isEditing ? (
           <input
@@ -120,20 +120,20 @@ function CategoryItem({
             onChange={(e) => setEditName(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-white border rounded px-2 py-1"
+            className="flex-1 bg-dark-bg border border-white/10 rounded px-2 py-1 text-white"
             autoFocus
             onClick={e => e.stopPropagation()}
           />
         ) : (
           <span 
-            className="flex-1 font-medium"
+            className="flex-1 font-medium text-white"
             onDoubleClick={handleDoubleClick}
           >
             {category.name}
           </span>
         )}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{categoryBookmarks.length}</span>
+          <span className="text-sm text-neutral-text">{categoryBookmarks.length}</span>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {category.id !== 'default' && (
               <>
@@ -142,7 +142,7 @@ function CategoryItem({
                     e.stopPropagation();
                     setShowSettings(!showSettings);
                   }}
-                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
+                  className="p-1 text-neutral-text hover:text-white hover:bg-white/5 rounded"
                   title="Paramètres de la catégorie"
                 >
                   <Settings className="w-4 h-4" />
@@ -152,7 +152,7 @@ function CategoryItem({
                     e.stopPropagation();
                     onDelete(category.id);
                   }}
-                  className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                  className="p-1 text-error-light hover:text-error hover:bg-error/10 rounded"
                   title="Supprimer la catégorie"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -164,10 +164,10 @@ function CategoryItem({
       </div>
       
       {showSettings && category.id !== 'default' && (
-        <div className="ml-6 p-2 bg-gray-50 rounded-md" onClick={e => e.stopPropagation()}>
+        <div className="ml-6 p-2 bg-dark-bg/50 rounded-md glass-effect" onClick={e => e.stopPropagation()}>
           <form onSubmit={handleUrlPatternSubmit} className="space-y-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-text mb-1">
                 Type d'URL
               </label>
               <div className="flex gap-2">
@@ -176,11 +176,11 @@ function CategoryItem({
                   value={urlPattern}
                   onChange={(e) => setUrlPattern(e.target.value)}
                   placeholder="ex: bolt.new"
-                  className="flex-1 px-2 py-1 text-sm border rounded"
+                  className="flex-1 px-2 py-1 text-sm bg-dark-bg border border-white/10 rounded text-white placeholder-neutral-text"
                 />
                 <button
                   type="submit"
-                  className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="px-2 py-1 text-sm bg-gradient-save text-white rounded hover:opacity-90"
                 >
                   Enregistrer
                 </button>
@@ -248,16 +248,16 @@ function BookmarkItem({
       style={style}
       {...attributes}
       {...listeners}
-      className="flex items-center p-2 hover:bg-gray-100 rounded-md group"
+      className="flex items-center p-2 hover:bg-white/5 rounded-md group"
     >
       <div className="cursor-grab mr-2">
-        <GripVertical className="w-4 h-4 text-gray-400" />
+        <GripVertical className="w-4 h-4 text-neutral-text" />
       </div>
       <a
         href={bookmark.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 text-sm text-gray-700 hover:text-blue-600 truncate flex items-center gap-1"
+        className="flex-1 text-sm text-primary hover:text-primary-light truncate flex items-center gap-1"
         onClick={(e) => e.stopPropagation()}
       >
         {bookmark.title}
@@ -266,14 +266,14 @@ function BookmarkItem({
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
         <button
           onClick={handleCopy}
-          className="p-1 text-gray-500 hover:text-gray-700"
+          className="p-1 text-neutral-text hover:text-white"
           title="Copier le lien"
         >
           <Copy className="w-3 h-3" />
         </button>
         <button
           onClick={handleDelete}
-          className="p-1 text-red-500 hover:text-red-700"
+          className="p-1 text-error-light hover:text-error"
           title="Supprimer"
         >
           <Trash2 className="w-3 h-3" />
@@ -303,21 +303,21 @@ export function Sidebar({
   );
 
   return (
-    <div className="w-1/2 bg-white p-4 flex flex-col h-full">
+    <div className="w-1/2 bg-dark-card p-4 flex flex-col h-full">
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-text w-4 h-4" />
           <input
             type="text"
             placeholder="Rechercher..."
             value={searchTerm}
             onChange={(e) => onSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-dark-bg border border-white/10 rounded-md text-white placeholder-neutral-text focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <button
           onClick={onAddCategory}
-          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
+          className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
           title="Nouvelle catégorie"
         >
           <Plus className="w-5 h-5" />
