@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { auth } from '../config/firebase';
-import { signInWithEmailAndPassword, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, User } from 'firebase/auth';
 import { Lock } from 'lucide-react';
 
 interface AuthProps {
@@ -11,50 +11,6 @@ export function Auth({ onAuthStateChange }: AuthProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Vérifier si l'utilisateur est déjà authentifié dans l'application principale
-    const checkParentAuth = () => {
-      if (window.parent !== window) {
-        // L'application est dans une iframe
-        window.parent.postMessage({ type: 'CHECK_AUTH' }, '*');
-      }
-    };
-
-    const handleParentMessage = (event: MessageEvent) => {
-      if (event.data.type === 'AUTH_STATUS') {
-        if (event.data.token) {
-          // Utiliser le token pour s'authentifier automatiquement
-          auth.signInWithCustomToken(event.data.token)
-            .then((userCredential) => {
-              onAuthStateChange(userCredential.user);
-            })
-            .catch((error) => {
-              console.error('Erreur d\'authentification automatique:', error);
-              setIsLoading(false);
-            });
-        } else {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    window.addEventListener('message', handleParentMessage);
-    checkParentAuth();
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      onAuthStateChange(user);
-      if (!user) {
-        setIsLoading(false);
-      }
-    });
-
-    return () => {
-      window.removeEventListener('message', handleParentMessage);
-      unsubscribe();
-    };
-  }, [onAuthStateChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,14 +23,6 @@ export function Auth({ onAuthStateChange }: AuthProps) {
       setError('Email ou mot de passe incorrect');
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
