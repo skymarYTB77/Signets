@@ -7,6 +7,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { detectUrlType } from '../utils/boltUrl';
 import { SearchBar } from './SearchBar';
 import { BookmarkList } from './BookmarkList';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface SidebarProps {
   categories: Category[];
@@ -46,11 +47,12 @@ function CategoryItem({
   onCopyBookmark: (url: string) => void;
   searchTerm: string;
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
   const [showSettings, setShowSettings] = useState(false);
   const [urlPattern, setUrlPattern] = useState(category.urlPattern || '');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { setNodeRef, isOver } = useDroppable({
     id: `category-${category.id}`,
@@ -81,6 +83,16 @@ function CategoryItem({
   const handleUrlPatternSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateUrlPattern(urlPattern.trim());
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    onDelete(category.id);
   };
 
   return (
@@ -134,10 +146,7 @@ function CategoryItem({
                   <Settings className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(category.id);
-                  }}
+                  onClick={handleDeleteClick}
                   className="p-1 text-error-light hover:text-error hover:bg-error/10 rounded"
                   title="Supprimer la catégorie"
                 >
@@ -186,6 +195,16 @@ function CategoryItem({
           />
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="Supprimer la catégorie"
+        message={`Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ? Les signets seront déplacés vers "Nouveaux signets".`}
+        confirmLabel="Supprimer"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        type="danger"
+      />
     </div>
   );
 }
