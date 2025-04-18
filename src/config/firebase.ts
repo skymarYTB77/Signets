@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_fQ_OeOjMsYVJIIZ6YFHQZ5_luwMnt2E",
@@ -9,23 +10,14 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-// Configure local persistence instead of session persistence
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error('Error setting auth persistence:', error);
+// Enable offline persistence for Firestore
+enableIndexedDbPersistence(db).catch((err) => {
+  console.error('Error enabling Firestore persistence:', err);
 });
 
-// Auth state change listener
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // Token refresh check every 10 minutes
-    setInterval(async () => {
-      try {
-        await user.getIdToken(true);
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-        auth.signOut();
-      }
-    }, 10 * 60 * 1000);
-  }
+// Configure local persistence for Auth
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Error setting auth persistence:', error);
 });

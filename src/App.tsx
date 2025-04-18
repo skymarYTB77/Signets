@@ -8,6 +8,7 @@ import { convertToBoltUrl } from './utils/boltUrl';
 import { useKeyboardShortcut } from './hooks/useKeyboardShortcut';
 import { User } from 'firebase/auth';
 import { firestoreService } from './services/firestore';
+import { auth } from './config/firebase';
 import {
   DndContext,
   DragEndEvent,
@@ -36,6 +37,16 @@ function App() {
       },
     })
   );
+
+  // Check auth state on mount
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,7 +77,10 @@ function App() {
     loadData();
   }, [user]);
 
+  // Save bookmarks when they change
   useEffect(() => {
+    let timeoutId: number;
+
     const saveBookmarks = async () => {
       if (user && !isLoading) {
         try {
@@ -77,10 +91,19 @@ function App() {
       }
     };
 
-    saveBookmarks();
+    if (user && !isLoading) {
+      // Debounce saves to avoid too many writes
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(saveBookmarks, 1000);
+    }
+
+    return () => clearTimeout(timeoutId);
   }, [bookmarks, user, isLoading]);
 
+  // Save categories when they change
   useEffect(() => {
+    let timeoutId: number;
+
     const saveCategories = async () => {
       if (user && !isLoading) {
         try {
@@ -92,7 +115,13 @@ function App() {
       }
     };
 
-    saveCategories();
+    if (user && !isLoading) {
+      // Debounce saves to avoid too many writes
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(saveCategories, 1000);
+    }
+
+    return () => clearTimeout(timeoutId);
   }, [categories, user, isLoading]);
 
   const findMatchingCategory = (url: string): string => {
@@ -114,11 +143,11 @@ function App() {
       categoryId
     };
 
-    setBookmarks([...bookmarks, newBookmark]);
+    setBookmarks(prev => [...prev, newBookmark]);
   };
 
   const deleteBookmark = (id: string) => {
-    setBookmarks(bookmarks.filter(bookmark => bookmark.id !== id));
+    setBookmarks(prev => prev.filter(bookmark => bookmark.id !== id));
   };
 
   const addCategory = () => {
@@ -126,7 +155,7 @@ function App() {
       id: Date.now().toString(),
       name: 'Nouvelle catégorie'
     };
-    setCategories([...categories, newCategory]);
+    setCategories(prev => [...prev, newCategory]);
   };
 
   const deleteCategory = (id: string) => {
@@ -136,10 +165,10 @@ function App() {
     if (!categoryToDelete) return;
 
     if (window.confirm(`Voulez-vous vraiment supprimer la catégorie "${categoryToDelete.name}" ? Les signets seront déplacés vers "Nouveaux signets".`)) {
-      setBookmarks(bookmarks.map(bookmark => 
+      setBookmarks(prev => prev.map(bookmark => 
         bookmark.categoryId === id ? { ...bookmark, categoryId: DEFAULT_CATEGORY_ID } : bookmark
       ));
-      setCategories(categories.filter(category => category.id !== id));
+      setCategories(prev => prev.filter(category => category.id !== id));
       if (selectedCategory === id) {
         setSelectedCategory(DEFAULT_CATEGORY_ID);
       }
@@ -148,7 +177,7 @@ function App() {
 
   const renameCategory = (id: string, newName: string) => {
     if (id === DEFAULT_CATEGORY_ID) return;
-    setCategories(categories.map(category =>
+    setCategories(prev => prev.map(category =>
       category.id === id ? { ...category, name: newName } : category
     ));
   };
@@ -165,11 +194,11 @@ function App() {
       return;
     }
 
-    setCategories(categories.map(category =>
+    setCategories(prev => prev.map(category =>
       category.id === id ? { ...category, urlPattern } : category
     ));
 
-    setBookmarks(bookmarks.map(bookmark => {
+    setBookmarks(prev => prev.map(bookmark => {
       if (bookmark.url.includes(urlPattern)) {
         return { ...bookmark, categoryId: id };
       }
@@ -191,7 +220,7 @@ function App() {
 
     if (over.id.toString().startsWith('category-')) {
       const categoryId = over.id.toString().replace('category-', '');
-      setBookmarks(bookmarks.map(b => 
+      setBookmarks(prev => prev.map(b => 
         b.id === active.id ? { ...b, categoryId } : b
       ));
     }
@@ -206,16 +235,16 @@ function App() {
     }
   });
 
-  if (!user) {
-    return <Auth onAuthStateChange={setUser} />;
-  }
-
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <Auth onAuthStateChange={setUser} />;
   }
 
   return (
@@ -255,4 +284,4 @@ function App() {
   );
 }
 
-export default App;
+export default App
