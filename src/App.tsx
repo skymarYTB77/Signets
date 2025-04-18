@@ -29,6 +29,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY_ID);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 640);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -38,7 +40,19 @@ function App() {
     })
   );
 
-  // Check auth state on mount
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobileView(width < 640);
+      setShowSidebar(width >= 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
@@ -77,7 +91,6 @@ function App() {
     loadData();
   }, [user]);
 
-  // Save bookmarks when they change
   useEffect(() => {
     let timeoutId: number;
 
@@ -92,7 +105,6 @@ function App() {
     };
 
     if (user && !isLoading) {
-      // Debounce saves to avoid too many writes
       clearTimeout(timeoutId);
       timeoutId = window.setTimeout(saveBookmarks, 1000);
     }
@@ -100,7 +112,6 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [bookmarks, user, isLoading]);
 
-  // Save categories when they change
   useEffect(() => {
     let timeoutId: number;
 
@@ -116,7 +127,6 @@ function App() {
     };
 
     if (user && !isLoading) {
-      // Debounce saves to avoid too many writes
       clearTimeout(timeoutId);
       timeoutId = window.setTimeout(saveCategories, 1000);
     }
@@ -144,6 +154,9 @@ function App() {
     };
 
     setBookmarks(prev => [...prev, newBookmark]);
+    if (isMobileView) {
+      setShowSidebar(true);
+    }
   };
 
   const deleteBookmark = (id: string) => {
@@ -248,31 +261,42 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-dark-bg flex items-center justify-center p-4">
+    <div className="h-screen w-full bg-dark-bg flex items-center justify-center">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="w-full max-w-7xl h-[800px] bg-dark-card rounded-lg overflow-hidden shadow-xl neon-shadow">
-          <div className="flex h-full flex-col md:flex-row">
-            <Sidebar
-              categories={categories}
-              bookmarks={bookmarks}
-              selectedCategory={selectedCategory}
-              onCategorySelect={setSelectedCategory}
-              onAddCategory={addCategory}
-              onDeleteCategory={deleteCategory}
-              onRenameCategory={renameCategory}
-              onUpdateCategoryUrlPattern={updateCategoryUrlPattern}
-              onDeleteBookmark={deleteBookmark}
-              onCopyBookmark={handleCopy}
-              searchTerm={searchTerm}
-              onSearch={setSearchTerm}
-            />
-            <div className="w-full md:w-1/2 bg-dark-card p-6 border-t md:border-t-0 md:border-l border-white/10">
+        <div className="w-full h-full max-w-[800px] max-h-[600px] bg-dark-card rounded-lg overflow-hidden shadow-xl neon-shadow">
+          <div className="flex h-full flex-col sm:flex-row">
+            {(showSidebar || !isMobileView) && (
+              <Sidebar
+                categories={categories}
+                bookmarks={bookmarks}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+                onAddCategory={addCategory}
+                onDeleteCategory={deleteCategory}
+                onRenameCategory={renameCategory}
+                onUpdateCategoryUrlPattern={updateCategoryUrlPattern}
+                onDeleteBookmark={deleteBookmark}
+                onCopyBookmark={handleCopy}
+                searchTerm={searchTerm}
+                onSearch={setSearchTerm}
+                onClose={() => setShowSidebar(false)}
+                isMobileView={isMobileView}
+              />
+            )}
+            <div className={`${showSidebar && isMobileView ? 'hidden' : 'flex-1'} bg-dark-card p-4 sm:p-6 border-t sm:border-t-0 sm:border-l border-white/10`}>
               <div className="flex items-center gap-2 mb-6">
-                <LinkIcon className="w-6 h-6 text-primary" />
+                {isMobileView && !showSidebar && (
+                  <button
+                    onClick={() => setShowSidebar(true)}
+                    className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
+                  >
+                    <LinkIcon className="w-6 h-6" />
+                  </button>
+                )}
                 <h1 className="text-xl font-semibold text-white">Nouveau signet</h1>
               </div>
               <BookmarkForm onAdd={addBookmark} />
@@ -284,4 +308,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

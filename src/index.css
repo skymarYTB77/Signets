@@ -15,12 +15,20 @@
     --neon-shadow: rgba(107, 213, 237, 0.3);
   }
 
+  html, body {
+    @apply h-full w-full overflow-hidden;
+  }
+
   body {
     @apply font-sans text-neutral-text bg-dark-bg;
   }
 
   code {
     @apply font-code;
+  }
+
+  #root {
+    @apply h-full w-full;
   }
 }
 
@@ -56,8 +64,8 @@
 @layer utilities {
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {

@@ -81,20 +81,20 @@ function SortableBookmark({
       <div
         ref={setNodeRef}
         style={style}
-        className="flex items-center p-2 hover:bg-white/5 rounded-md group"
+        className="flex items-center p-1.5 hover:bg-white/5 rounded-md group"
       >
-        <div {...attributes} {...listeners} className="cursor-grab mr-2">
+        <div {...attributes} {...listeners} className="cursor-grab mr-1.5">
           <GripVertical className="w-4 h-4 text-neutral-text" />
         </div>
         <a
           href={bookmark.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 text-sm text-primary hover:text-primary-light truncate flex items-center gap-1"
+          className="flex-1 min-w-0 text-sm text-primary hover:text-primary-light truncate flex items-center gap-1"
           title={bookmark.title}
         >
           <HighlightText text={bookmark.title} highlight={searchTerm} />
-          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 flex-shrink-0" />
         </a>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
           <button

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink, GripVertical, Settings } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronRight, Trash2, Copy, ExternalLink, GripVertical, Settings, X } from 'lucide-react';
 import { Category, Bookmark } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,6 +22,8 @@ interface SidebarProps {
   onCopyBookmark: (url: string) => void;
   searchTerm: string;
   onSearch: (term: string) => void;
+  onClose?: () => void;
+  isMobileView?: boolean;
 }
 
 function CategoryItem({ 
@@ -222,6 +224,8 @@ export function Sidebar({
   onCopyBookmark,
   searchTerm,
   onSearch,
+  onClose,
+  isMobileView
 }: SidebarProps) {
   const [searchFilter, setSearchFilter] = useState<string>('all');
 
@@ -247,9 +251,17 @@ export function Sidebar({
   const filteredBookmarks = filterBookmarks(bookmarks);
 
   return (
-    <div className="w-full md:w-1/2 bg-dark-card p-6 flex flex-col h-full">
-      <div className="mb-6">
+    <div className={`${isMobileView ? 'absolute inset-0 z-10' : 'w-1/2'} bg-dark-card flex flex-col h-full`}>
+      <div className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
+          {isMobileView && onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
           <SearchBar
             searchTerm={searchTerm}
             onSearch={onSearch}
@@ -259,7 +271,7 @@ export function Sidebar({
           />
           <button
             onClick={onAddCategory}
-            className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
+            className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md flex-shrink-0"
             title="Nouvelle catégorie"
           >
             <Plus className="w-6 h-6" />
@@ -267,7 +279,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 space-y-3">
         {categories.map((category) => (
           <CategoryItem
             key={category.id}
