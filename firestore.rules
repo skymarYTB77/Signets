@@ -1,84 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if the user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Helper function to check if the email is verified
-    function isEmailVerified() {
-      return isAuthenticated() && request.auth.token.email_verified == true;
-    }
-
-    // Rules for the users collection
-    match /users/{userId} {
-      // Allow read access to authenticated users
-      allow read: if isAuthenticated();
-
-      // Allow write access only if the user is the owner and email is verified
-      allow create, update: if isOwner(userId) && isEmailVerified();
-
-      // Allow delete access only if the user is the owner
-      allow delete: if isOwner(userId);
-
-      // Rules for bookmarks subcollection
-      match /bookmarks/{bookmarkId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Rules for categories subcollection
-      match /categories/{categoryId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Rules for subcollection todoLists
-      match /todoLists/{todoListId} {
-        allow read: if isAuthenticated();
-        allow create, update, delete: if isOwner(userId);
-      }
-    }
-
-    // Rules for the activities collection
-    match /activities/{activityId} {
-      allow read: if isAuthenticated();
-      
-      allow create: if isAuthenticated()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.userEmail == request.auth.token.email;
-
-      allow delete: if isAuthenticated();
-    }
-
-    // Rules for the restaurants collections
-    match /restaurants_visible/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /restaurants_accepted/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /restaurants_rejected/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Rules for the hotels collections
-    match /hotels_visible/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /hotels_accepted/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /hotels_rejected/{docId} {
-      allow read, write: if isAuthenticated();
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -2,9 +2,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCof6x4nXK1rKaTKAnyETLz9Ej33g_CL0c",
-  projectId: "gestionnaire-de-fiches",
-  authDomain: "gestionnaire-de-fiches.firebaseapp.com",
+  apiKey: "AIzaSyA_fQ_OeOjMsYVJIIZ6YFHQZ5_luwMnt2E",
+  projectId: "signets-f0082",
+  authDomain: "signets-f0082.firebaseapp.com",
 };
 
 export const app = initializeApp(firebaseConfig);
