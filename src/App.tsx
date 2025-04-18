@@ -37,7 +37,6 @@ function App() {
     })
   );
 
-  // Load data from Firestore when user changes
   useEffect(() => {
     const loadData = async () => {
       if (user) {
@@ -67,7 +66,6 @@ function App() {
     loadData();
   }, [user]);
 
-  // Save bookmarks to Firestore
   useEffect(() => {
     const saveBookmarks = async () => {
       if (user && !isLoading) {
@@ -82,7 +80,6 @@ function App() {
     saveBookmarks();
   }, [bookmarks, user, isLoading]);
 
-  // Save categories to Firestore
   useEffect(() => {
     const saveCategories = async () => {
       if (user && !isLoading) {
@@ -222,33 +219,35 @@ function App() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
+    <div className="min-h-screen w-full bg-dark-bg flex items-center justify-center p-4">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex w-[800px] h-[500px] bg-dark-card rounded-lg overflow-hidden shadow-xl neon-shadow">
-          <Sidebar
-            categories={categories}
-            bookmarks={bookmarks}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            onAddCategory={addCategory}
-            onDeleteCategory={deleteCategory}
-            onRenameCategory={renameCategory}
-            onUpdateCategoryUrlPattern={updateCategoryUrlPattern}
-            onDeleteBookmark={deleteBookmark}
-            onCopyBookmark={handleCopy}
-            searchTerm={searchTerm}
-            onSearch={setSearchTerm}
-          />
-          <div className="w-1/2 bg-dark-card p-4 border-l border-white/10">
-            <div className="flex items-center gap-2 mb-4">
-              <LinkIcon className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-semibold text-white">Nouveau signet</h1>
+        <div className="w-full max-w-7xl h-[800px] bg-dark-card rounded-lg overflow-hidden shadow-xl neon-shadow">
+          <div className="flex h-full flex-col md:flex-row">
+            <Sidebar
+              categories={categories}
+              bookmarks={bookmarks}
+              selectedCategory={selectedCategory}
+              onCategorySelect={setSelectedCategory}
+              onAddCategory={addCategory}
+              onDeleteCategory={deleteCategory}
+              onRenameCategory={renameCategory}
+              onUpdateCategoryUrlPattern={updateCategoryUrlPattern}
+              onDeleteBookmark={deleteBookmark}
+              onCopyBookmark={handleCopy}
+              searchTerm={searchTerm}
+              onSearch={setSearchTerm}
+            />
+            <div className="w-full md:w-1/2 bg-dark-card p-6 border-t md:border-t-0 md:border-l border-white/10">
+              <div className="flex items-center gap-2 mb-6">
+                <LinkIcon className="w-6 h-6 text-primary" />
+                <h1 className="text-xl font-semibold text-white">Nouveau signet</h1>
+              </div>
+              <BookmarkForm onAdd={addBookmark} />
             </div>
-            <BookmarkForm onAdd={addBookmark} />
           </div>
         </div>
       </DndContext>

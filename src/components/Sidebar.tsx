@@ -247,8 +247,8 @@ export function Sidebar({
   const filteredBookmarks = filterBookmarks(bookmarks);
 
   return (
-    <div className="w-1/2 bg-dark-card p-4 flex flex-col h-full">
-      <div className="mb-4">
+    <div className="w-full md:w-1/2 bg-dark-card p-6 flex flex-col h-full">
+      <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
           <SearchBar
             searchTerm={searchTerm}
@@ -262,12 +262,12 @@ export function Sidebar({
             className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
             title="Nouvelle catégorie"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2">
+      <div className="flex-1 overflow-y-auto space-y-3">
         {categories.map((category) => (
           <CategoryItem
             key={category.id}
