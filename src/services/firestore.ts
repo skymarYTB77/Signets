@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, writeBatch, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Bookmark, Category } from '../types';
 
@@ -95,6 +95,28 @@ export const firestoreService = {
     }
   },
 
+  // Real-time bookmarks subscription
+  subscribeToBookmarks(userId: string, callback: (bookmarks: Bookmark[]) => void) {
+    if (!userId) throw new Error('userId est requis');
+
+    const userBookmarksRef = collection(db, `users/${userId}/bookmarks`);
+    return onSnapshot(userBookmarksRef, (snapshot: QuerySnapshot<DocumentData>) => {
+      const bookmarks = snapshot.docs.map(doc => doc.data() as Bookmark);
+      
+      // Validation des données
+      for (const bookmark of bookmarks) {
+        if (!validateData(bookmark, bookmarkSchema)) {
+          console.error('Signet invalide dans la base de données:', bookmark);
+          return;
+        }
+      }
+
+      callback(bookmarks);
+    }, (error) => {
+      console.error('Erreur lors de l\'écoute des signets:', error);
+    });
+  },
+
   // Categories
   async saveCategories(userId: string, categories: Category[]) {
     if (!userId) throw new Error('userId est requis');
@@ -151,5 +173,27 @@ export const firestoreService = {
       console.error('Erreur lors de la récupération des catégories:', error);
       throw error;
     }
+  },
+
+  // Real-time categories subscription
+  subscribeToCategories(userId: string, callback: (categories: Category[]) => void) {
+    if (!userId) throw new Error('userId est requis');
+
+    const userCategoriesRef = collection(db, `users/${userId}/categories`);
+    return onSnapshot(userCategoriesRef, (snapshot: QuerySnapshot<DocumentData>) => {
+      const categories = snapshot.docs.map(doc => doc.data() as Category);
+      
+      // Validation des données
+      for (const category of categories) {
+        if (!validateData(category, categorySchema)) {
+          console.error('Catégorie invalide dans la base de données:', category);
+          return;
+        }
+      }
+
+      callback(categories);
+    }, (error) => {
+      console.error('Erreur lors de l\'écoute des catégories:', error);
+    });
   }
 };

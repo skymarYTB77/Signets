@@ -46,6 +46,7 @@ function SortableBookmark({
   searchTerm: string;
 }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
   
   const {
     attributes,
@@ -62,8 +63,14 @@ function SortableBookmark({
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await navigator.clipboard.writeText(bookmark.url);
-    onCopy(bookmark.url);
+    try {
+      await navigator.clipboard.writeText(bookmark.url);
+      onCopy(bookmark.url);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -81,7 +88,7 @@ function SortableBookmark({
       <div
         ref={setNodeRef}
         style={style}
-        className="flex items-center p-1.5 hover:bg-white/5 rounded-md group"
+        className="flex items-center p-1.5 hover:bg-white/5 rounded-md group relative"
       >
         <div {...attributes} {...listeners} className="cursor-grab mr-1.5">
           <GripVertical className="w-4 h-4 text-neutral-text" />
@@ -99,10 +106,15 @@ function SortableBookmark({
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
           <button
             onClick={handleCopy}
-            className="p-1 text-neutral-text hover:text-white"
+            className="p-1 text-neutral-text hover:text-white relative"
             title="Copier le lien"
           >
             <Copy className="w-3 h-3" />
+            {showCopyNotification && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-primary rounded whitespace-nowrap">
+                Copié !
+              </div>
+            )}
           </button>
           <button
             onClick={handleDeleteClick}

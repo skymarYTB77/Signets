@@ -3,6 +3,8 @@ import { Link as LinkIcon } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { BookmarkForm } from './components/BookmarkForm';
 import { Auth } from './components/Auth';
+import { ProfileMenu } from './components/ProfileMenu';
+import { Toast, ToastType } from './components/Toast';
 import { Bookmark, Category } from './types';
 import { convertToBoltUrl } from './utils/boltUrl';
 import { useKeyboardShortcut } from './hooks/useKeyboardShortcut';
@@ -20,6 +22,11 @@ import {
 
 const DEFAULT_CATEGORY_ID = 'default';
 
+interface ToastState {
+  message: string;
+  type: ToastType;
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -31,6 +38,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 640);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -63,10 +71,15 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
+    let unsubscribeBookmarks: (() => void) | undefined;
+    let unsubscribeCategories: (() => void) | undefined;
+
+    const setupSubscriptions = async () => {
       if (user) {
         try {
           setIsLoading(true);
+          
+          // Initial data load
           const [loadedBookmarks, loadedCategories] = await Promise.all([
             firestoreService.getBookmarks(user.uid),
             firestoreService.getCategories(user.uid)
@@ -80,15 +93,35 @@ function App() {
               ...loadedCategories.filter(c => c.id !== DEFAULT_CATEGORY_ID)
             ];
           });
+
+          // Setup real-time subscriptions
+          unsubscribeBookmarks = firestoreService.subscribeToBookmarks(user.uid, (newBookmarks) => {
+            setBookmarks(newBookmarks);
+          });
+
+          unsubscribeCategories = firestoreService.subscribeToCategories(user.uid, (newCategories) => {
+            setCategories(prev => {
+              const defaultCategory = prev.find(c => c.id === DEFAULT_CATEGORY_ID);
+              return [
+                defaultCategory!,
+                ...newCategories.filter(c => c.id !== DEFAULT_CATEGORY_ID)
+              ];
+            });
+          });
         } catch (error) {
-          console.error('Error loading data:', error);
+          console.error('Error setting up subscriptions:', error);
         } finally {
           setIsLoading(false);
         }
       }
     };
 
-    loadData();
+    setupSubscriptions();
+
+    return () => {
+      if (unsubscribeBookmarks) unsubscribeBookmarks();
+      if (unsubscribeCategories) unsubscribeCategories();
+    };
   }, [user]);
 
   useEffect(() => {
@@ -134,6 +167,10 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [categories, user, isLoading]);
 
+  const showToast = (message: string, type: ToastType) => {
+    setToast({ message, type });
+  };
+
   const findMatchingCategory = (url: string): string => {
     const matchingCategory = categories.find(category => 
       category.urlPattern && url.includes(category.urlPattern)
@@ -157,10 +194,15 @@ function App() {
     if (isMobileView) {
       setShowSidebar(true);
     }
+    showToast('Signet ajouté avec succès', 'success');
   };
 
   const deleteBookmark = (id: string) => {
-    setBookmarks(prev => prev.filter(bookmark => bookmark.id !== id));
+    const bookmarkToDelete = bookmarks.find(b => b.id === id);
+    if (bookmarkToDelete) {
+      setBookmarks(prev => prev.filter(bookmark => bookmark.id !== id));
+      showToast(`Signet "${bookmarkToDelete.title}" supprimé`, 'success');
+    }
   };
 
   const addCategory = () => {
@@ -185,6 +227,7 @@ function App() {
       if (selectedCategory === id) {
         setSelectedCategory(DEFAULT_CATEGORY_ID);
       }
+      showToast(`Catégorie "${categoryToDelete.name}" supprimée`, 'success');
     }
   };
 
@@ -288,22 +331,32 @@ function App() {
               />
             )}
             <div className={`${showSidebar && isMobileView ? 'hidden' : 'flex-1'} bg-dark-card p-4 sm:p-6 border-t sm:border-t-0 sm:border-l border-white/10`}>
-              <div className="flex items-center gap-2 mb-6">
-                {isMobileView && !showSidebar && (
-                  <button
-                    onClick={() => setShowSidebar(true)}
-                    className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
-                  >
-                    <LinkIcon className="w-6 h-6" />
-                  </button>
-                )}
-                <h1 className="text-xl font-semibold text-white">Nouveau signet</h1>
+              <div className="flex items-center justify-between gap-2 mb-6">
+                <div className="flex items-center gap-2">
+                  {isMobileView && !showSidebar && (
+                    <button
+                      onClick={() => setShowSidebar(true)}
+                      className="p-2 text-neutral-text hover:text-white hover:bg-white/5 rounded-md"
+                    >
+                      <LinkIcon className="w-6 h-6" />
+                    </button>
+                  )}
+                  <h1 className="text-xl font-semibold text-white">Nouveau signet</h1>
+                </div>
+                <ProfileMenu userEmail={user.email || ''} />
               </div>
               <BookmarkForm onAdd={addBookmark} />
             </div>
           </div>
         </div>
       </DndContext>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
